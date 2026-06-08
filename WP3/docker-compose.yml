@@ -1,0 +1,20 @@
+services:
+  api_service:
+    build:
+      context: ./api_service
+      dockerfile: Dockerfile
+    ports:
+      - "${API_SERVICE_PORT:-8000}:8000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  rule_service:
+    build:
+      context: ./rule_service
+      dockerfile: Dockerfile
+    ports:
+      - "${RULE_SERVICE_PORT:-8010}:8010"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -1,0 +1,73 @@
+{
+  "focus_sites": [
+    "H1",
+    "H4",
+    "H8",
+    "R1"
+  ],
+  "feature_cols": [
+    "CO2",
+    "VoC",
+    "PMS2_5",
+    "PMS10",
+    "T",
+    "H",
+    "CO2_roc",
+    "VoC_roc",
+    "PMS2_5_roc",
+    "PMS10_roc",
+    "CO2_acc",
+    "VoC_acc",
+    "PMS2_5_acc",
+    "PMS10_acc",
+    "CO2_rm5",
+    "VoC_rm5",
+    "PMS2_5_rm5",
+    "PMS10_rm5",
+    "CO2_rm10",
+    "VoC_rm10",
+    "PMS2_5_rm10",
+    "PMS10_rm10",
+    "hour_sin",
+    "hour_cos",
+    "weekend"
+  ],
+  "target_cols": [
+    "CO2_t5",
+    "VoC_t5",
+    "PMS2_5_t5",
+    "PMS10_t5",
+    "CO2_t15",
+    "VoC_t15",
+    "PMS2_5_t15",
+    "PMS10_t15",
+    "CO2_t30",
+    "VoC_t30",
+    "PMS2_5_t30",
+    "PMS10_t30",
+    "CO2_t60",
+    "VoC_t60",
+    "PMS2_5_t60",
+    "PMS10_t60"
+  ],
+  "base_pollutants": [
+    "CO2",
+    "VoC",
+    "PMS2_5",
+    "PMS10"
+  ],
+  "horizons": [
+    5,
+    15,
+    30,
+    60
+  ],
+  "lookback_min": 30,
+  "max_days_per_site": 18,
+  "max_sequences": 700000,
+  "n_sequences": 700000,
+  "n_train": 489999,
+  "n_val": 105000,
+  "n_test": 105001,
+  "n_features": 25
+}

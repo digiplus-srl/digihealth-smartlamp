@@ -19,6 +19,7 @@ Sistema di monitoraggio ambientale indoor basato su Raspberry Pi. Legge sensori 
 | **Pagina Config** | Interfaccia web per modificare `config/default.yaml` (o `windows.yaml`) senza toccare i file; bottone **Riavvia** integrato |
 | **InfluxDB** | Invio diretto a InfluxDB Cloud via `influxdb-client` |
 | **Telegram** | Notifiche push su bot Telegram ad ogni alert ricevuto (livello, inquinante, azioni eseguite) |
+| **WP3** | Servizi Docker per forecasting LSTM, motore rule-based e task InfluxDB in [`WP3/`](WP3/) |
 
 ---
 
