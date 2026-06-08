@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Secrets (mai committare il .env reale)
+.env
+*.env
+!.env.example
+CHIAVI_CONFIG.md
+
+# Database SQLite locali
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+
+# Audio temporanei generati a runtime
+/tmp/wn.wav
+/tmp/pn.wav
+
+# Editor
+.vscode/
+.idea/
+*.swp

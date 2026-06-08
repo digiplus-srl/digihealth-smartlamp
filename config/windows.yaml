@@ -1,0 +1,94 @@
+actuators:
+  neopixel:
+    enabled: false
+  shelly:
+    devices:
+    - enabled: true
+      ip: 192.168.1.191
+      name: Lampada1 Uff Sensorizzato
+    enabled: false
+  tuya_ac:
+    enabled: false
+    fan_speed: low
+    device_id: bf189345591dfac26ehvvj
+    ip: 192.168.0.127
+    local_key: "v;-khIaItEN[+-v:"
+    mode: c
+    temp_key: TEMP-[C]
+    temp_off: 19
+    temp_on: 10
+    temp_target: 22
+  tuya_purifier:
+    co2_limit: 800
+    device_id: 30604337807d3a7f7eda
+    enabled: false
+    ip: 192.168.0.108
+    local_key: EB/FoSq??wzH?xML
+    pm25_limit: 25
+communicator:
+  ipc:
+    db_path: "C:/Users/digip/AppData/Local/Temp/digihealth.db"
+    method: sqlite
+  telegraf:
+    enabled: false
+logging:
+  level: INFO
+processors:
+  audio_comfort:
+    check_duration: 10
+    comfort_duration: 300
+    critical_threshold: 55
+    enabled: true
+    tolerance_threshold: 45
+sensors:
+  light:
+    enabled: false
+  microphone:
+    device_index: 1
+    enabled: true
+    output_device_index: 3
+  zph:
+    enabled: false
+thresholds:
+  ch2o:
+    critical: 0.11
+    tolerance: 0.06
+  co:
+    critical: 10
+    tolerance: 7
+  co2:
+    critical: 1001
+    tolerance: 801
+  hum:
+    critical: 70.1
+    tolerance: 60
+  lux:
+    critical: 100
+    tolerance: 200
+  no2:
+    critical: 0.1
+    tolerance: 0.05
+  o3:
+    critical: 0.12
+    tolerance: 0.07
+  pm1:
+    critical: 20
+    tolerance: 10
+  pm10:
+    critical: 90
+    tolerance: 45
+  pm25:
+    critical: 35
+    tolerance: 15
+  temp:
+    critical: 28.1
+    tolerance: 10
+  tvoc:
+    critical: 3
+    tolerance: 2
+web:
+  enabled: true
+  host: 127.0.0.1
+  port: 5000
+telegram:
+  enabled: true

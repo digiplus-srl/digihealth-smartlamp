@@ -1,0 +1,17 @@
+[Unit]
+Description=Cloudflare Tunnel per DigiHealth Lamp
+After=network.target digihealth-lamp.service
+Wants=digihealth-lamp.service
+
+[Service]
+Type=simple
+User=digip
+# Usa il file /home/digip/.cloudflared/config.yml (vedi cloudflared/config.example.yml)
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/digip/.cloudflared/config.yml run
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,347 @@
+=====================================================
+    GUIDA GESTIONE SERVIZIO: DIGIHEALTH LAMP
+=====================================================
+
+Il servizio systemd (digihealth-lamp.service) gestisce l'avvio
+automatico del sistema di monitoraggio ambientale alla accensione
+della Raspberry Pi e ne garantisce il riavvio in caso di crash.
+
+Cosa fa il servizio:
+  1. Avvia automaticamente lo script Python all'accensione
+  2. Riavvia lo script automaticamente in caso di errore (dopo 5s)
+  3. Invia costantemente i dati a InfluxDB via influxdb-client
+  4. Aggiorna la striscia NeoPixel e la dashboard web
+  5. Controlla le lampadine Shelly (luce circadiana + dimming adattivo)
+  6. Controlla il purificatore PNI PTA200 (Tuya) in base a PM2.5/CO2
+  7. Controlla il climatizzatore Solight DAC-12000 (Tuya) in base alla temperatura
+  8. Invia notifiche Telegram ad ogni alert ricevuto via /api/alerts
+
+Percorsi:
+  Cartella progetto:  /home/digip/digihealth-smartlamp
+  File di servizio:   /etc/systemd/system/digihealth-lamp.service
+  Ambiente virtuale:  /home/digip/digihealth-smartlamp/venv/
+  Log di sistema:     journalctl -u digihealth-lamp
+
+NOTA: Il servizio deve girare come User=root per permettere alla striscia
+NeoPixel di accedere a /dev/mem. Il file .env viene caricato tramite
+EnvironmentFile nel file .service — non usare Environment= inline.
+
+-----------------------------------------------------
+1. STATO DEL SERVIZIO
+-----------------------------------------------------
+
+Vedere se la lampada sta girando:
+  sudo systemctl status digihealth-lamp.service
+
+Output atteso quando tutto funziona:
+  ● digihealth-lamp.service - DigiHealth Lamp Service
+     Active: active (running) since ...
+
+-----------------------------------------------------
+2. AVVIO / ARRESTO / RIAVVIO
+-----------------------------------------------------
+
+Avviare il servizio:
+  sudo systemctl start digihealth-lamp.service
+
+Fermare il servizio:
+  sudo systemctl stop digihealth-lamp.service
+
+Riavviare (es. dopo modifiche al codice o alla config):
+  sudo systemctl restart digihealth-lamp.service
+
+ALTERNATIVA WEB: dalla pagina http://<ip>:5000/config
+  clicca il bottone "Riavvia" — l'app si riavvia automaticamente
+  e la pagina si ricarica da sola entro pochi secondi.
+
+-----------------------------------------------------
+3. AVVIO AUTOMATICO AL BOOT
+-----------------------------------------------------
+
+Attivare l'avvio automatico all'accensione:
+  sudo systemctl enable digihealth-lamp.service
+
+Disattivare l'avvio automatico:
+  sudo systemctl disable digihealth-lamp.service
+
+Verificare se è abilitato:
+  sudo systemctl is-enabled digihealth-lamp.service
+
+-----------------------------------------------------
+4. LOG IN TEMPO REALE
+-----------------------------------------------------
+
+Seguire i log mentre il servizio è attivo (CTRL+C per uscire):
+  sudo journalctl -u digihealth-lamp.service -f
+
+Ultimi 100 log:
+  sudo journalctl -u digihealth-lamp.service -n 100
+
+Log dall'ultimo avvio del sistema:
+  sudo journalctl -u digihealth-lamp.service -b
+
+Log con timestamp precisi:
+  sudo journalctl -u digihealth-lamp.service -f --output=short-precise
+
+-----------------------------------------------------
+5. ESECUZIONE MANUALE PER DEBUG
+-----------------------------------------------------
+
+  1. Ferma il servizio se è attivo:
+       sudo systemctl stop digihealth-lamp.service
+
+  2. Entra nella cartella del progetto:
+       cd /home/digip/digihealth-lamp
+
+  3. Attiva l'ambiente virtuale:
+       source venv/bin/activate
+
+  4. Lancia lo script:
+       sudo ./venv/bin/python3 -m digihealth.main
+
+  Usa CTRL+C per fermarlo. NON usare CTRL+Z (lascia processi zombie).
+
+-----------------------------------------------------
+6. CONFIGURAZIONE VIA WEB (CONSIGLIATO)
+-----------------------------------------------------
+
+Apri http://<ip-raspberry>:5000/config nel browser.
+
+Dalla pagina di configurazione puoi:
+  - Abilitare/disabilitare ogni attuatore con un toggle
+  - Modificare IP, local_key, soglie di tutti i dispositivi
+  - Modificare le soglie audio, impostazioni web, log level
+
+Pulsanti:
+  [Salva]    → scrive il file YAML su disco
+  [Riavvia]  → riavvia l'applicazione e ricarica la pagina automaticamente
+
+NOTA: le modifiche sono attive solo dopo il riavvio.
+
+-----------------------------------------------------
+7. INSTALLAZIONE / AGGIORNAMENTO DEL SERVIZIO
+-----------------------------------------------------
+
+Prima installazione:
+  sudo cp systemd/digihealth-lamp.service /etc/systemd/system/
+  sudo systemctl daemon-reload
+  sudo systemctl enable digihealth-lamp
+  sudo systemctl start digihealth-lamp
+
+Dopo aver modificato il file .service:
+  sudo systemctl daemon-reload
+  sudo systemctl restart digihealth-lamp.service
+
+Dopo aver modificato il codice Python:
+  sudo systemctl restart digihealth-lamp.service
+
+Dopo aver modificato config/default.yaml (o dalla pagina web):
+  sudo systemctl restart digihealth-lamp.service
+  (oppure clicca "Riavvia" nella pagina /config)
+
+-----------------------------------------------------
+8. ATTIVARE LE LAMPADINE SHELLY
+-----------------------------------------------------
+
+Via pagina web (consigliato):
+  1. Apri http://<ip>:5000/config
+  2. Nella sezione "Shelly" attiva il toggle
+  3. Verifica l'IP del dispositivo
+  4. Clicca Salva → Riavvia
+
+Via file (alternativa):
+  1. Apri config/default.yaml
+  2. Imposta shelly.enabled: true
+  3. Aggiungi/modifica i dispositivi nella lista devices
+  4. Riavvia il servizio
+
+Logica circadiana (gestita dalle Shelly):
+  07:00-15:59 → luce fredda (6500K)
+  16:00-06:59 → luce calda (2700K)
+  Luminosità:  adattiva in base al lux del sensore BH1750
+
+NOTA: la luce circadiana è ora gestita interamente dalle lampadine Shelly.
+La striscia NeoPixel usa tutti i 144 pixel esclusivamente per visualizzare
+l'IAQI con effetto breathing colorato.
+
+La dashboard mostra la lampadina con il colore reale (caldo/freddo)
+e l'intensità del glow in base alla brightness corrente.
+
+-----------------------------------------------------
+9. ATTIVARE IL PURIFICATORE TUYA (PNI PTA200)
+-----------------------------------------------------
+
+Via pagina web (consigliato):
+  1. Apri http://<ip>:5000/config
+  2. Nella sezione "Tuya Purificatore" attiva il toggle
+  3. Verifica IP e local_key
+  4. Clicca Salva → Riavvia
+
+Logica di controllo:
+  PM2.5 > 25 µg/m³  OPPURE  CO2 > 800 ppm → ACCESO
+  Entrambi nei limiti → SPENTO
+  Protocollo Tuya: v3.3
+
+Trovare IP e local_key:
+  python -m tinytuya scan
+
+-----------------------------------------------------
+10. ATTIVARE IL CLIMATIZZATORE TUYA (SOLIGHT DAC-12000)
+-----------------------------------------------------
+
+Dispositivo: Solight DAC-12000 / Portable AC-WBR3
+  Device ID:   bf189345591dfac26ehvvj
+  IP locale:   192.168.0.127
+  Protocollo:  Tuya v3.4
+
+Via pagina web (consigliato):
+  1. Apri http://<ip>:5000/config
+  2. Nella sezione "Tuya Climatizzatore" attiva il toggle
+  3. Verifica IP e local_key
+  4. Imposta le soglie di temperatura
+  5. Clicca Salva → Riavvia
+
+Logica di controllo (isteresi):
+  temp > temp_on  (default 26°C) → AC ACCESO in modalità freddo
+  temp < temp_off (default 24°C) → AC SPENTO
+  Temperatura target: 22°C (impostata sull'AC all'accensione)
+
+Mappa DPS verificata sul dispositivo:
+  DPS 1  → power (bool)
+  DPS 2  → temperatura impostata (int, °C)
+  DPS 3  → temperatura attuale letta dall'AC (int, °C)
+  DPS 5  → velocità ventola (low/middle/high/auto)
+  DPS 19 → modalità (c=freddo, h=caldo, d=deumidifica, f=ventola, a=auto)
+
+Test rapido del dispositivo:
+  python -c "
+  import tinytuya
+  d = tinytuya.OutletDevice('bf189345591dfac26ehvvj', '192.168.0.127', 'v;-khIaItEN[+-v:')
+  d.set_version(3.4)
+  print(d.status())
+  "
+
+-----------------------------------------------------
+11. DASHBOARD WEB — STATO ATTUATORI
+-----------------------------------------------------
+
+La dashboard (http://<ip>:5000) mostra in tempo reale
+una riga con lo stato di ogni attuatore abilitato:
+
+  NeoPixel      → pallino colorato con il colore IAQI corrente
+  Shelly 💡     → lampadina con glow caldo/freddo e percentuale
+  Purificatore 🌀 → ON/OFF, ultimo valore PM2.5 e CO2
+  Climatizzatore ❄️ → ON/OFF, temperatura ambiente rilevata
+
+I widget appaiono solo per gli attuatori con enabled: true.
+
+-----------------------------------------------------
+12. NOTIFICHE TELEGRAM
+-----------------------------------------------------
+
+Ad ogni alert ricevuto su /api/alerts il sistema invia
+automaticamente un messaggio Telegram con livello, inquinante,
+stanza e azioni eseguite.
+
+Il messaggio include:
+  - Livello alert (WARNING / CRITICAL)
+  - Categoria (Qualita aria / Temperatura / Generico)
+  - Stanza e inquinante dominante
+  - Valore che ha scatenato l'alert
+  - Azioni eseguite (purificatore, AC, NeoPixel)
+  - ID alert interno
+
+--- A. CREARE IL BOT ---
+
+  1. Apri Telegram e cerca @BotFather
+  2. Scrivi /newbot
+  3. Scegli un nome (es. "DigiHealth Alarm")
+  4. Scegli uno username (deve finire in "bot", es. digihealth_alarm_bot)
+  5. BotFather risponde con il TOKEN del bot, es.:
+       8830128600:AAEWhxBE98OfwWB0Z6Tm-JWssW7eXzAHeZw
+  6. Salva questo token — ti serve nel .env
+
+  NOTA: uno stesso bot può mandare messaggi a più gruppi/lampade.
+  Non serve creare un bot per ogni lampada.
+
+--- B. CREARE IL GRUPPO E AGGIUNGERE IL BOT ---
+
+  1. In Telegram crea un nuovo gruppo (es. "DIGI-HSM Allarmi Ufficio")
+  2. Aggiungi il bot al gruppo cercando il suo username
+  3. (Opzionale) Rendilo amministratore se vuoi che possa leggere tutti i messaggi
+
+--- C. OTTENERE IL CHAT ID DEL GRUPPO ---
+
+  Metodo più semplice — manda un messaggio nel gruppo poi apri:
+    https://api.telegram.org/bot<TOKEN>/getUpdates
+
+  Cerca nel JSON il campo "chat":{"id": -XXXXXXXXX}
+  Il chat_id del gruppo è NEGATIVO (es. -5126280398).
+
+  Oppure aggiungi @userinfobot al gruppo: risponde con l'ID.
+
+--- D. CONFIGURARE IL .env ---
+
+  Aprire /home/digip/digihealth-smartlamp/.env e impostare:
+
+    TELEGRAM_BOT_TOKEN=<token ottenuto da BotFather>
+    TELEGRAM_CHAT_ID=<chat id del gruppo, numero negativo>
+
+  Verificare che il file .service abbia nella sezione [Service]:
+    EnvironmentFile=/home/digip/digihealth-smartlamp/.env
+
+  Ricaricare e riavviare:
+    sudo systemctl daemon-reload
+    sudo systemctl restart digihealth-lamp.service
+
+--- E. TESTARE L'INVIO ---
+
+  Dal Raspberry con curl:
+    curl -s "https://api.telegram.org/bot<TOKEN>/sendMessage" \
+      -d chat_id=<CHAT_ID> \
+      -d text="Test DigiHealth OK"
+
+  Risposta attesa: {"ok":true,...}
+  Se risponde {"ok":false,"error_code":401}: token non valido, rigenerarlo
+  da @BotFather con /mybots → Revoke current token.
+
+  Test completo alert (simula un alert reale):
+    curl -s -X POST http://localhost:5000/api/alerts \
+      -H "Content-Type: application/json" \
+      -H "X-Api-Key: <DIGIHEALTH_API_KEY>" \
+      -d '{"event_type":"air_quality","level":"WARNING",
+           "lampada":"<CODICE_LAMPADA>","stanza":"<STANZA>",
+           "dominant_pollutant":"CO2","trigger_metric":"CO2",
+           "trigger_value":850,"action_code":"VENTILATE"}'
+
+--- F. ABILITARE / DISABILITARE ---
+
+  In config/default.yaml:
+    telegram:
+      enabled: true   ← true = attivo, false = disattivato
+
+--- G. VERIFICA NEI LOG ---
+
+  sudo journalctl -u digihealth-lamp.service -f | grep -i telegram
+
+  Messaggi attesi:
+    INFO  Telegram: notifica inviata per alert id=X   ← OK
+    DEBUG Telegram: TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non impostati  ← .env non caricato
+    WARNING Telegram: risposta non ok (401)           ← token non valido
+
+-----------------------------------------------------
+13. SALVATAGGIO MODIFICHE CON GIT
+-----------------------------------------------------
+
+Dopo ogni modifica importante al codice o alla configurazione:
+
+  git add .
+  git commit -m "Descrizione breve della modifica"
+  git push
+
+Esempio di messaggi di commit utili:
+  "Fix soglia audio comfort a 45 dB"
+  "Aggiorna soglie AC: on=27 off=25"
+  "Abilita purificatore Tuya in produzione"
+
+=====================================================

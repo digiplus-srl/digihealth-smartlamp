@@ -1,0 +1,211 @@
+=====================================================
+    GUIDA INSTALLAZIONE NUOVA LAMPADA — DIGIHEALTH
+=====================================================
+
+Raspberry Pi OS (64-bit), utente: digip
+
+-----------------------------------------------------
+1. SISTEMA — DIPENDENZE
+-----------------------------------------------------
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y python3-pip python3-dev python3-venv \
+    portaudio19-dev libasound2-dev mpg123 git unclutter
+
+
+-----------------------------------------------------
+2. ABILITARE UART E I2C
+-----------------------------------------------------
+
+sudo raspi-config
+  → Interfacing Options → Serial Port
+      - Login shell over serial: NO
+      - Serial hardware enabled: YES
+  → Interfacing Options → I2C → Enable
+sudo reboot
+
+IMPORTANTE: dopo il reboot verifica che in /boot/firmware/cmdline.txt
+NON ci sia "console=serial0,115200". Se c'è, rimuovila manualmente:
+
+  sudo nano /boot/firmware/cmdline.txt
+  # cancella solo: console=serial0,115200
+  # tutto il resto deve restare su UNA SOLA RIGA
+  sudo reboot
+
+
+-----------------------------------------------------
+3. CLONARE IL REPOSITORY
+-----------------------------------------------------
+
+cd /home/digip
+git clone https://github.com/ireneranaldo/digihealth-smartlamp.git digihealth-smartlamp
+cd digihealth-smartlamp
+
+
+-----------------------------------------------------
+4. AMBIENTE VIRTUALE E DIPENDENZE
+-----------------------------------------------------
+
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -e .
+
+
+-----------------------------------------------------
+5. PERMESSI PORTA SERIALE
+-----------------------------------------------------
+
+sudo usermod -a -G dialout digip
+# Il gruppo viene applicato al prossimo riavvio
+
+
+-----------------------------------------------------
+6. FILE DI LOG
+-----------------------------------------------------
+
+sudo touch /var/log/digihealth-lamp.log
+sudo chown digip:digip /var/log/digihealth-lamp.log
+
+
+-----------------------------------------------------
+7. FILE .env — CHIAVI E SEGRETI
+-----------------------------------------------------
+
+nano /home/digip/digihealth-smartlamp/.env
+
+Incolla e compila con i valori reali:
+
+  INFLUXDB_TOKEN=<token InfluxDB — vedi CHIAVI_CONFIG.md o pannello InfluxDB>
+  DIGIHEALTH_API_KEY=<genera con: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
+  TELEGRAM_BOT_TOKEN=<token da @BotFather su Telegram>
+  TELEGRAM_CHAT_ID=<chat id destinatario alert>
+
+
+-----------------------------------------------------
+8. CONFIGURAZIONE LAMPADA (stanza, IP dispositivi)
+-----------------------------------------------------
+
+nano /home/digip/digihealth-smartlamp/config/default.yaml
+
+Aggiorna la sezione tags con i dati della nuova stanza:
+
+  tags:
+    client_id: '57'
+    host: raspberry01
+    lampada: <codice lampada, es. AS00000077>
+    sensor: ZPHS01B
+    stanza: <nome stanza, es. UfficioIngresso>
+
+Aggiorna anche IP e local_key di Shelly e Tuya se cambiano.
+
+
+-----------------------------------------------------
+9. SERVIZIO SYSTEMD
+-----------------------------------------------------
+
+sudo nano /etc/systemd/system/digihealth-lamp.service
+
+Incolla questo contenuto (adatta il percorso se necessario):
+
+  [Unit]
+  Description=DigiHealth Lamp Service
+  After=network.target
+
+  [Service]
+  Type=simple
+  User=root
+  WorkingDirectory=/home/digip/digihealth-smartlamp
+  ExecStart=/home/digip/digihealth-smartlamp/venv/bin/python3 -m digihealth.main
+  Restart=always
+  RestartSec=5
+  StandardOutput=journal
+  StandardError=journal
+  EnvironmentFile=/home/digip/digihealth-smartlamp/.env
+
+  [Install]
+  WantedBy=multi-user.target
+
+Poi:
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable digihealth-lamp
+  sudo systemctl start digihealth-lamp
+
+
+-----------------------------------------------------
+10. AUTOLOGIN UTENTE digip
+-----------------------------------------------------
+
+sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+sudo nano /etc/systemd/system/getty@tty1.service.d/autologin.conf
+
+Incolla:
+
+  [Service]
+  ExecStart=
+  ExecStart=-/sbin/agetty --autologin digip --noclear %I $TERM
+
+sudo systemctl daemon-reload
+
+
+-----------------------------------------------------
+11. BROWSER A TUTTO SCHERMO ALL'AVVIO
+-----------------------------------------------------
+
+mkdir -p /home/digip/.config/autostart
+nano /home/digip/.config/autostart/kiosk.desktop
+
+Incolla:
+
+  [Desktop Entry]
+  Type=Application
+  Name=Dashboard
+  Exec=chromium-browser --start-fullscreen --noerrdialogs --disable-infobars --no-first-run http://localhost:5000
+
+
+-----------------------------------------------------
+12. RIAVVIO FINALE E VERIFICA
+-----------------------------------------------------
+
+sudo reboot
+
+Dopo il riavvio:
+
+  # Stato del servizio
+  sudo systemctl status digihealth-lamp
+
+  # Log in tempo reale
+  sudo journalctl -u digihealth-lamp -f --no-pager
+
+  # Dashboard web
+  http://localhost:5000  (o http://<ip-raspberry>:5000 da un altro PC)
+
+  # Verifica lettura sensore (dopo ~30 secondi dall'avvio)
+  sudo journalctl -u digihealth-lamp --no-pager | grep -iE "co2|pm2|temp"
+
+
+-----------------------------------------------------
+TROUBLESHOOTING RAPIDO
+-----------------------------------------------------
+
+Sensore ZPH non legge (PM2.5=0 CO2=0):
+  → Verifica che "console=serial0" NON sia in /boot/firmware/cmdline.txt
+  → Verifica che digip sia nel gruppo dialout: groups digip
+  → Test manuale porta seriale:
+     sudo python3 -c "
+     import serial, time
+     s = serial.Serial('/dev/serial0', 9600, timeout=2)
+     s.write(bytes([0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79]))
+     time.sleep(1); print(list(s.read(9)))"
+
+Servizio non parte (Permission denied su /var/log):
+  → sudo touch /var/log/digihealth-lamp.log
+  → sudo chown digip:digip /var/log/digihealth-lamp.log
+
+NeoPixel non funziona (Permission denied su /dev/mem):
+  → Il servizio deve girare come root (User=root nel file .service).
+  → Verifica che il file .service abbia User=root e riavvia:
+     sudo systemctl daemon-reload && sudo systemctl restart digihealth-lamp
+
+=====================================================

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Alert & Azioni</title>
+    <style>
+        :root {
+            --bg: #ddeeff;
+            --panel: #eaf4ff;
+            --text: #4d3c2f;
+            --muted: #9b8a7a;
+            --green: #4a7c5f;
+            --yellow: #d8a47f;
+            --red: #e0573f;
+            --shadow: rgba(80,48,32,0.18);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 14px;
+            background: var(--bg); color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+        .head {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 12px;
+        }
+        h1 { font-size: 1.2rem; margin: 0; }
+        .spacer { flex: 1; }
+        .btn {
+            padding: 7px 14px; border-radius: 999px; border: none;
+            background: var(--yellow); color: white; font-weight: 700;
+            cursor: pointer; text-transform: uppercase; font-size: 0.75rem;
+        }
+        .meta { font-size: 0.8rem; color: var(--muted); }
+        .wrap {
+            background: var(--panel); border-radius: 16px;
+            box-shadow: 0 6px 18px var(--shadow); overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        th, td { padding: 9px 12px; text-align: left; vertical-align: top; }
+        thead th {
+            background: rgba(216,164,127,0.25); color: var(--text);
+            position: sticky; top: 0; font-weight: 700;
+        }
+        tbody tr { border-top: 1px solid rgba(155,138,122,0.18); }
+        tbody tr:hover { background: rgba(255,255,255,0.5); }
+        .lvl { font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; }
+        .lvl-CRITICAL { background: rgba(224,87,63,0.18); color: var(--red); }
+        .lvl-WARNING  { background: rgba(216,164,127,0.25); color: #b07a3f; }
+        .lvl-OK, .lvl- { background: rgba(74,124,95,0.15); color: var(--green); }
+        .action { color: var(--green); font-weight: 600; }
+        .none   { color: var(--muted); font-style: italic; }
+        .when   { white-space: nowrap; color: var(--muted); }
+        .empty  { padding: 30px; text-align: center; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <div class="head">
+        <h1>📋 Log Alert &amp; Azioni</h1>
+        <span class="meta" id="count"></span>
+        <span class="spacer"></span>
+        <span class="meta" id="updated"></span>
+        <button class="btn" onclick="window.location='/'">← Dashboard</button>
+    </div>
+
+    <div class="wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ricevuto</th>
+                    <th>Gravità</th>
+                    <th>Inquinante / Metrica</th>
+                    <th>Valore</th>
+                    <th>Action code</th>
+                    <th>Azione consigliata</th>
+                    <th>Azione eseguita</th>
+                    <th>Sorgente</th>
+                </tr>
+            </thead>
+            <tbody id="rows">
+                <tr><td colspan="8" class="empty">Caricamento…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function esc(s) {
+            if (s === null || s === undefined || s === '') return '';
+            return String(s).replace(/[&<>"]/g, c =>
+                ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        }
+        function fmtTime(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            return isNaN(d) ? esc(iso) : d.toLocaleString('it-IT');
+        }
+        function refresh() {
+            fetch('/alerts/data')
+                .then(r => r.json())
+                .then(data => {
+                    const rows = data.alerts || [];
+                    document.getElementById('count').innerText = rows.length + ' alert';
+                    document.getElementById('updated').innerText =
+                        'aggiornato ' + new Date().toLocaleTimeString('it-IT');
+                    const tb = document.getElementById('rows');
+                    if (!rows.length) {
+                        tb.innerHTML = '<tr><td colspan="8" class="empty">Nessun alert ricevuto.</td></tr>';
+                        return;
+                    }
+                    tb.innerHTML = rows.map(a => {
+                        const lvl = (a.level || '').toUpperCase();
+                        const poll = a.dominant_pollutant
+                            ? esc(a.dominant_pollutant)
+                            : esc(a.trigger_metric || '');
+                        const action = a.action_taken
+                            ? `<span class="action">${esc(a.action_taken)}</span>`
+                            : (a.processed ? '<span class="none">—</span>' : '<span class="none">in attesa</span>');
+                        const src = [a.lampada, a.stanza].filter(Boolean).map(esc).join(' · ');
+                        return `<tr>
+                            <td class="when">${fmtTime(a.received_at)}</td>
+                            <td><span class="lvl lvl-${esc(lvl)}">${esc(lvl) || '—'}</span></td>
+                            <td>${poll || '—'}</td>
+                            <td>${a.trigger_value ?? '—'}</td>
+                            <td>${esc(a.action_code) || '—'}</td>
+                            <td>${esc(a.recommended_action) || '—'}</td>
+                            <td>${action}</td>
+                            <td>${src || '—'}</td>
+                        </tr>`;
+                    }).join('');
+                })
+                .catch(() => {
+                    document.getElementById('rows').innerHTML =
+                        '<tr><td colspan="8" class="empty">Errore nel caricamento.</td></tr>';
+                });
+        }
+        refresh();
+        setInterval(refresh, 5000);
+    </script>
+</body>
+</html>

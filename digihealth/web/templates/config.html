@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurazione – DigiHealth</title>
+    <style>
+        :root {
+            --bg:         #ddeeff;
+            --card-bg:    linear-gradient(140deg, #eaf4ff, #d0e8f8);
+            --accent:     #ca8e7b;
+            --accent2:    #d8a47f;
+            --red:        #e49571;
+            --text:       #4d3c2f;
+            --text-light: #9a8070;
+            --border:     rgba(208,170,132,0.45);
+            --shadow:     rgba(80,48,32,0.2);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; gap: 12px;
+            background: linear-gradient(140deg, #eaf4ff, #d0e8f8);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 10px var(--shadow);
+            padding: 10px 16px;
+        }
+        .header a {
+            color: var(--text-light); text-decoration: none;
+            font-size: 0.85rem; font-weight: 600;
+            padding: 4px 10px; border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        .header a:hover { background: rgba(255,255,255,0.4); }
+        .header h1 { flex: 1; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+        .btn-save {
+            padding: 7px 20px; border-radius: 999px; border: none;
+            background: var(--accent); color: white;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 3px 10px var(--shadow);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn-save:hover { transform: translateY(-1px); box-shadow: 0 5px 14px var(--shadow); }
+        .btn-save:active { transform: translateY(0); }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-restart {
+            padding: 7px 20px; border-radius: 999px; border: none;
+            background: #b07060; color: white;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 3px 10px var(--shadow);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn-restart:hover { transform: translateY(-1px); box-shadow: 0 5px 14px var(--shadow); }
+        .btn-restart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── MAIN ── */
+        .main { max-width: 700px; margin: 0 auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* ── SECTION ── */
+        .section-title {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+            color: var(--text-light); text-transform: uppercase;
+            padding: 0 4px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 14px var(--shadow);
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.2);
+        }
+        .card-title { font-size: 0.9rem; font-weight: 700; }
+        .card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+        /* ── FIELDS ── */
+        .field-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center; gap: 8px;
+        }
+        .field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+        .field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .field-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .thr-readonly {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 10px; border-radius: 8px;
+            border: 1px dashed var(--border);
+            background: rgba(255,255,255,0.25);
+            font-size: 0.82rem; color: var(--text-light);
+        }
+        .thr-readonly strong { color: var(--text); font-weight: 700; }
+        .thr-link {
+            font-size: 0.72rem; color: var(--accent); font-weight: 600;
+            text-decoration: none; white-space: nowrap;
+            padding: 2px 8px; border-radius: 999px;
+            border: 1px solid rgba(202,142,123,0.4);
+            transition: background 0.15s;
+        }
+        .thr-link:hover { background: rgba(202,142,123,0.15); }
+        label {
+            font-size: 0.78rem; color: var(--text-light); font-weight: 600;
+        }
+        input[type="text"], input[type="number"], input[type="password"], select {
+            width: 100%; padding: 6px 10px;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.55);
+            color: var(--text); font-size: 0.82rem;
+            outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(202,142,123,0.2);
+        }
+        input[readonly] { opacity: 0.6; cursor: default; }
+        .field-unit { font-size: 0.72rem; color: var(--text-light); white-space: nowrap; }
+        .field-group { display: flex; gap: 6px; align-items: center; }
+
+        /* ── TOGGLE ── */
+        .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+        .toggle {
+            position: relative; width: 42px; height: 24px; cursor: pointer;
+            display: inline-block;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.15); border-radius: 12px;
+            transition: background 0.25s;
+        }
+        .slider::before {
+            content: ''; position: absolute;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: white; top: 3px; left: 3px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: transform 0.25s;
+        }
+        .toggle input:checked + .slider { background: var(--accent); }
+        .toggle input:checked + .slider::before { transform: translateX(18px); }
+        .toggle-label { font-size: 0.8rem; font-weight: 600; }
+
+        /* ── NOTE ── */
+        .note {
+            font-size: 0.72rem; color: var(--text-light);
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 8px; border-left: 3px solid var(--accent2);
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #4a7c5f; color: white;
+            padding: 10px 24px; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0; z-index: 999;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        #toast.error { background: var(--red); }
+
+        /* ── SPINNER ── */
+        .loading { text-align: center; padding: 40px; color: var(--text-light); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/">← Dashboard</a>
+    <a href="/thresholds">Soglie</a>
+    <h1>Configurazione</h1>
+    <button class="btn-save" id="btn-save" onclick="saveConfig()">Salva</button>
+    <button class="btn-restart" id="btn-restart" onclick="restartApp()">Riavvia</button>
+</div>
+
+<div class="main" id="main">
+    <div class="loading">Caricamento configurazione…</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let cfg = {};
+
+// ── Fetch config ──────────────────────────────────────────────────────────────
+fetch('/config/data')
+    .then(r => r.json())
+    .then(data => {
+        cfg = data;
+        renderConfig();
+    })
+    .catch(() => showToast('Errore nel caricamento della configurazione', true));
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderConfig() {
+    const main = document.getElementById('main');
+    main.innerHTML = `
+        ${renderSection('ATTUATORI', renderActuators())}
+        ${renderSection('SENSORI', renderSensors())}
+        ${renderSection('PROCESSORI', renderProcessors())}
+        ${renderSection('SISTEMA', renderSystem())}
+        <div class="note">Dopo aver salvato, riavvia l'applicazione per applicare le modifiche.</div>
+    `;
+    bindAll();
+}
+
+function renderSection(title, content) {
+    return `<div>
+        <div class="section-title">${title}</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px">${content}</div>
+    </div>`;
+}
+
+// ── Attuatori ─────────────────────────────────────────────────────────────────
+function renderActuators() {
+    const ac  = (cfg.actuators || {}).tuya_ac       || {};
+    const pur = (cfg.actuators || {}).tuya_purifier  || {};
+    const sh  = (cfg.actuators || {}).shelly         || {};
+    const neo = (cfg.actuators || {}).neopixel       || {};
+
+    return `
+    <!-- Tuya Climatizzatore -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Tuya Climatizzatore (Solight DAC-12000)</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="ac_enabled" ${ac.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="ac_enabled_lbl">${ac.enabled ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="field-row">
+                <label>Device ID</label>
+                <input type="text" id="ac_device_id" value="${ac.device_id || ''}" readonly>
+            </div>
+            <div class="field-row">
+                <label>IP locale</label>
+                <input type="text" id="ac_ip" value="${ac.ip || ''}" placeholder="192.168.0.x">
+            </div>
+            <div class="field-row">
+                <label>Local Key</label>
+                <input type="password" id="ac_local_key" value="${ac.local_key || ''}">
+            </div>
+            <div class="field-row cols-2">
+                <div>
+                    <label>Accendi se temp &gt;</label>
+                    <div class="field-group"><input type="number" id="ac_temp_on" value="${ac.temp_on ?? 26}" style="width:60px"><span class="field-unit">°C</span></div>
+                </div>
+                <div>
+                    <label>Spegni se temp &lt;</label>
+                    <div class="field-group"><input type="number" id="ac_temp_off" value="${ac.temp_off ?? 24}" style="width:60px"><span class="field-unit">°C</span></div>
+                </div>
+            </div>
+            <div class="field-row cols-3">
+                <div>
+                    <label>Target</label>
+                    <div class="field-group"><input type="number" id="ac_temp_target" value="${ac.temp_target ?? 22}" style="width:60px"><span class="field-unit">°C</span></div>
+                </div>
+                <div>
+                    <label>Modalità</label>
+                    <select id="ac_mode">
+                        <option value="c"  ${ac.mode==='c'  ? 'selected':''}>Freddo</option>
+                        <option value="h"  ${ac.mode==='h'  ? 'selected':''}>Caldo</option>
+                        <option value="d"  ${ac.mode==='d'  ? 'selected':''}>Deumidifica</option>
+                        <option value="f"  ${ac.mode==='f'  ? 'selected':''}>Ventilazione</option>
+                        <option value="a"  ${ac.mode==='a'  ? 'selected':''}>Auto</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Ventola</label>
+                    <select id="ac_fan_speed">
+                        <option value="auto"   ${ac.fan_speed==='auto'   ? 'selected':''}>Auto</option>
+                        <option value="low"    ${ac.fan_speed==='low'    ? 'selected':''}>Bassa</option>
+                        <option value="middle" ${ac.fan_speed==='middle' ? 'selected':''}>Media</option>
+                        <option value="high"   ${ac.fan_speed==='high'   ? 'selected':''}>Alta</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tuya Purificatore -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Tuya Purificatore (PNI PTA200)</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="pur_enabled" ${pur.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="pur_enabled_lbl">${pur.enabled ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="field-row">
+                <label>Device ID</label>
+                <input type="text" id="pur_device_id" value="${pur.device_id || ''}" readonly>
+            </div>
+            <div class="field-row">
+                <label>IP locale</label>
+                <input type="text" id="pur_ip" value="${pur.ip || ''}" placeholder="192.168.0.x">
+            </div>
+            <div class="field-row">
+                <label>Local Key</label>
+                <input type="password" id="pur_local_key" value="${pur.local_key || ''}">
+            </div>
+            <div class="field-row cols-2">
+                <div>
+                    <label>Accende se PM2.5 &gt;</label>
+                    <div class="thr-readonly">
+                        <strong>${((cfg.thresholds||{}).pm25||{}).tolerance ?? 15} µg/m³</strong>
+                    </div>
+                </div>
+                <div>
+                    <label>Accende se CO2 &gt;</label>
+                    <div class="thr-readonly">
+                        <strong>${((cfg.thresholds||{}).co2||{}).tolerance ?? 801} ppm</strong>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align:right; padding-top:2px">
+                <a href="/thresholds" class="thr-link">Modifica soglie →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shelly -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Shelly</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="sh_enabled" ${sh.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="sh_enabled_lbl">${sh.enabled ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+        ${sh.devices && sh.devices.length ? `
+        <div class="card-body">
+            ${sh.devices.map((d, i) => `
+            <div class="field-row">
+                <label>${d.name || 'Dispositivo ' + (i+1)}</label>
+                <input type="text" id="sh_dev_ip_${i}" value="${d.ip || ''}">
+            </div>`).join('')}
+        </div>` : ''}
+    </div>
+
+    <!-- NeoPixel -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">NeoPixel</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="neo_enabled" ${neo.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="neo_enabled_lbl">${neo.enabled ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── Sensori ───────────────────────────────────────────────────────────────────
+function renderSensors() {
+    const mic = (cfg.sensors || {}).microphone || {};
+    return `
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Microfono</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="mic_enabled" ${mic.enabled ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="mic_enabled_lbl">${mic.enabled ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="field-row">
+                <label>Device index (IN)</label>
+                <input type="number" id="mic_in" value="${mic.device_index ?? 1}" style="max-width:80px">
+            </div>
+            <div class="field-row">
+                <label>Device index (OUT)</label>
+                <input type="number" id="mic_out" value="${mic.output_device_index ?? 2}" style="max-width:80px">
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── Processori ────────────────────────────────────────────────────────────────
+function renderProcessors() {
+    const ac = (cfg.processors || {}).audio_comfort || {};
+    return `
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Audio Comfort</span>
+            <div class="toggle-wrap">
+                <label class="toggle">
+                    <input type="checkbox" id="acp_enabled" ${ac.enabled !== false ? 'checked' : ''}>
+                    <span class="slider"></span>
+                </label>
+                <span class="toggle-label" id="acp_enabled_lbl">${ac.enabled !== false ? 'ON' : 'OFF'}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="field-row cols-2">
+                <div>
+                    <label>Soglia comfort</label>
+                    <div class="field-group"><input type="number" step="0.1" id="acp_tol" value="${ac.tolerance_threshold ?? 45}" style="width:70px"><span class="field-unit">dB</span></div>
+                </div>
+                <div>
+                    <label>Soglia critica</label>
+                    <div class="field-group"><input type="number" step="0.1" id="acp_crit" value="${ac.critical_threshold ?? 55}" style="width:70px"><span class="field-unit">dB</span></div>
+                </div>
+            </div>
+            <div class="field-row cols-2">
+                <div>
+                    <label>Durata check</label>
+                    <div class="field-group"><input type="number" id="acp_check" value="${ac.check_duration ?? 10}" style="width:70px"><span class="field-unit">sec</span></div>
+                </div>
+                <div>
+                    <label>Durata comfort</label>
+                    <div class="field-group"><input type="number" id="acp_comfort" value="${ac.comfort_duration ?? 300}" style="width:70px"><span class="field-unit">sec</span></div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── Sistema ───────────────────────────────────────────────────────────────────
+function renderSystem() {
+    const w = cfg.web     || {};
+    const l = cfg.logging || {};
+    return `
+    <div class="card">
+        <div class="card-body">
+            <div class="field-row">
+                <label>Web host</label>
+                <input type="text" id="web_host" value="${w.host || '127.0.0.1'}">
+            </div>
+            <div class="field-row">
+                <label>Web port</label>
+                <input type="number" id="web_port" value="${w.port || 5000}" style="max-width:90px">
+            </div>
+            <div class="field-row">
+                <label>Log level</label>
+                <select id="log_level" style="max-width:120px">
+                    ${['DEBUG','INFO','WARNING','ERROR'].map(v =>
+                        `<option value="${v}" ${l.level===v?'selected':''}>${v}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+    </div>`;
+}
+
+// ── Bind toggle labels ────────────────────────────────────────────────────────
+function bindAll() {
+    const toggles = ['ac_enabled','pur_enabled','sh_enabled','neo_enabled','mic_enabled','acp_enabled'];
+    toggles.forEach(id => {
+        const el  = document.getElementById(id);
+        const lbl = document.getElementById(id + '_lbl');
+        if (el && lbl) el.addEventListener('change', () => lbl.innerText = el.checked ? 'ON' : 'OFF');
+    });
+}
+
+// ── Collect & save ────────────────────────────────────────────────────────────
+function collect() {
+    const v = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
+    const n = id => { const val = parseFloat(v(id)); return isNaN(val) ? 0 : val; };
+    const b = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+
+    const out = JSON.parse(JSON.stringify(cfg)); // deep clone
+
+    // tuya_ac
+    if (!out.actuators) out.actuators = {};
+    out.actuators.tuya_ac = {
+        ...(out.actuators.tuya_ac || {}),
+        enabled:     b('ac_enabled'),
+        device_id:   v('ac_device_id'),
+        ip:          v('ac_ip'),
+        local_key:   v('ac_local_key'),
+        temp_on:     n('ac_temp_on'),
+        temp_off:    n('ac_temp_off'),
+        temp_target: n('ac_temp_target'),
+        mode:        v('ac_mode'),
+        fan_speed:   v('ac_fan_speed'),
+    };
+
+    // tuya_purifier
+    out.actuators.tuya_purifier = {
+        ...(out.actuators.tuya_purifier || {}),
+        enabled:   b('pur_enabled'),
+        device_id: v('pur_device_id'),
+        ip:        v('pur_ip'),
+        local_key: v('pur_local_key'),
+    };
+
+    // shelly
+    out.actuators.shelly = {
+        ...(out.actuators.shelly || {}),
+        enabled: b('sh_enabled'),
+    };
+    if (out.actuators.shelly.devices) {
+        out.actuators.shelly.devices = out.actuators.shelly.devices.map((d, i) => ({
+            ...d,
+            ip: v('sh_dev_ip_' + i) || d.ip,
+        }));
+    }
+
+    // neopixel
+    out.actuators.neopixel = { ...(out.actuators.neopixel || {}), enabled: b('neo_enabled') };
+
+    // microphone
+    if (!out.sensors) out.sensors = {};
+    out.sensors.microphone = {
+        ...(out.sensors.microphone || {}),
+        enabled:              b('mic_enabled'),
+        device_index:         Math.round(n('mic_in')),
+        output_device_index:  Math.round(n('mic_out')),
+    };
+
+    // audio_comfort
+    if (!out.processors) out.processors = {};
+    out.processors.audio_comfort = {
+        ...(out.processors.audio_comfort || {}),
+        enabled:             b('acp_enabled'),
+        tolerance_threshold: n('acp_tol'),
+        critical_threshold:  n('acp_crit'),
+        check_duration:      Math.round(n('acp_check')),
+        comfort_duration:    Math.round(n('acp_comfort')),
+    };
+
+    // web + logging
+    if (!out.web) out.web = {};
+    out.web.host = v('web_host');
+    out.web.port = Math.round(n('web_port'));
+    if (!out.logging) out.logging = {};
+    out.logging.level = v('log_level');
+
+    return out;
+}
+
+function saveConfig() {
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.innerText = 'Salvataggio…';
+
+    fetch('/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collect()),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            showToast('Configurazione salvata');
+            // Aggiorna cfg locale con i valori salvati
+            cfg = collect();
+        } else {
+            showToast('Errore: ' + (data.message || 'sconosciuto'), true);
+        }
+    })
+    .catch(() => showToast('Errore di connessione', true))
+    .finally(() => {
+        btn.disabled  = false;
+        btn.innerText = 'Salva';
+    });
+}
+
+// ── Restart ───────────────────────────────────────────────────────────────────
+function restartApp() {
+    if (!confirm('Riavviare l\'applicazione?')) return;
+    const btn = document.getElementById('btn-restart');
+    btn.disabled = true;
+    btn.innerText = 'Riavvio…';
+    fetch('/restart', { method: 'POST' })
+        .then(() => {
+            showToast('Riavvio in corso — attendi…');
+            // Ricarica la pagina quando il server torna su
+            const poll = setInterval(() => {
+                fetch('/').then(r => {
+                    if (r.ok) { clearInterval(poll); location.reload(); }
+                }).catch(() => {});
+            }, 1000);
+            setTimeout(() => clearInterval(poll), 20000);
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerText = 'Riavvia';
+            showToast('Errore di connessione', true);
+        });
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3000);
+}
+</script>
+</body>
+</html>

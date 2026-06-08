@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soglie – DigiHealth</title>
+    <style>
+        :root {
+            --bg:         #ddeeff;
+            --card-bg:    linear-gradient(140deg, #eaf4ff, #d0e8f8);
+            --accent:     #ca8e7b;
+            --accent2:    #d8a47f;
+            --red:        #e49571;
+            --text:       #4d3c2f;
+            --text-light: #9a8070;
+            --border:     rgba(208,170,132,0.45);
+            --shadow:     rgba(80,48,32,0.2);
+            --badge-pur:  #7aab8a;
+            --badge-ac:   #7a9bab;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; align-items: center; gap: 12px;
+            background: linear-gradient(140deg, #eaf4ff, #d0e8f8);
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 2px 10px var(--shadow);
+            padding: 10px 16px;
+        }
+        .header a {
+            color: var(--text-light); text-decoration: none;
+            font-size: 0.85rem; font-weight: 600;
+            padding: 4px 10px; border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        .header a:hover { background: rgba(255,255,255,0.4); }
+        .header h1 { flex: 1; font-size: 1rem; font-weight: 700; letter-spacing: 1px; }
+        .btn-save {
+            padding: 7px 20px; border-radius: 999px; border: none;
+            background: var(--accent); color: white;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 3px 10px var(--shadow);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn-save:hover { transform: translateY(-1px); box-shadow: 0 5px 14px var(--shadow); }
+        .btn-save:active { transform: translateY(0); }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-restart {
+            padding: 7px 20px; border-radius: 999px; border: none;
+            background: #b07060; color: white;
+            font-size: 0.82rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 3px 10px var(--shadow);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .btn-restart:hover { transform: translateY(-1px); box-shadow: 0 5px 14px var(--shadow); }
+        .btn-restart:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── MAIN ── */
+        .main { max-width: 860px; margin: 0 auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 16px; }
+
+        /* ── NOTE ── */
+        .note {
+            font-size: 0.75rem; color: var(--text-light);
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.35);
+            border-radius: 10px; border-left: 3px solid var(--accent2);
+            line-height: 1.5;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 14px var(--shadow);
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.2);
+        }
+        .card-title { font-size: 0.9rem; font-weight: 700; }
+        .card-subtitle { font-size: 0.72rem; color: var(--text-light); }
+
+        /* ── TABLE ── */
+        .thr-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .thr-table thead th {
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.15);
+        }
+        .thr-table thead th.th-center { text-align: center; }
+        .thr-table tbody tr {
+            border-bottom: 1px solid rgba(208,170,132,0.2);
+            transition: background 0.12s;
+        }
+        .thr-table tbody tr:last-child { border-bottom: none; }
+        .thr-table tbody tr:hover { background: rgba(255,255,255,0.3); }
+        .thr-table td { padding: 9px 14px; vertical-align: middle; }
+        .td-var { font-weight: 600; color: var(--text); }
+        .td-unit {
+            font-size: 0.75rem; color: var(--text-light);
+            white-space: nowrap; font-family: monospace;
+        }
+        .td-num { text-align: center; }
+        .td-uses { text-align: center; }
+
+        /* ── INPUT ── */
+        .thr-input {
+            width: 90px; padding: 5px 8px;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.6);
+            color: var(--text); font-size: 0.82rem;
+            text-align: center;
+            outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .thr-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(202,142,123,0.2);
+        }
+
+        /* ── BADGES ── */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .badge-purificatore { background: rgba(122,171,138,0.2); color: #4a8060; border: 1px solid rgba(122,171,138,0.4); }
+        .badge-climatizzatore { background: rgba(122,155,171,0.2); color: #3a6878; border: 1px solid rgba(122,155,171,0.4); }
+        .badge-none { color: var(--text-light); font-size: 0.75rem; }
+
+        /* ── SECTION TITLE ── */
+        .section-title {
+            font-size: 0.7rem; font-weight: 700; letter-spacing: 2px;
+            color: var(--text-light); text-transform: uppercase;
+            padding: 0 4px 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── LEGEND ── */
+        .legend {
+            display: flex; gap: 16px; flex-wrap: wrap;
+            padding: 10px 14px;
+            border-top: 1px solid var(--border);
+            background: rgba(255,255,255,0.1);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-light); }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #4a7c5f; color: white;
+            padding: 10px 24px; border-radius: 999px;
+            font-size: 0.85rem; font-weight: 600;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0; z-index: 999;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        #toast.error { background: var(--red); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/">← Dashboard</a>
+    <a href="/config">Config</a>
+    <h1>Soglie di Sistema</h1>
+    <button class="btn-save" id="btn-save" onclick="saveThresholds()">Salva</button>
+    <button class="btn-restart" id="btn-restart" onclick="restartApp()">Riavvia</button>
+</div>
+
+<div class="main">
+
+    <div class="note">
+        Soglie di riferimento per le variabili fisiche ambientali.
+        <strong>Tolleranza</strong>: primo livello di allerta — il purificatore si accende quando PM2.5 o CO2 superano questo valore;
+        il climatizzatore si accende quando la temperatura supera questo valore.
+        <strong>Critica</strong>: livello di emergenza (per futuri attuatori e NeoPixel). Il rumore non è gestito qui.
+    </div>
+
+    <div>
+        <div class="section-title">Qualità dell'aria</div>
+        <div style="margin-top:8px">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Inquinanti e Particolato</span>
+                    <span class="card-subtitle">Purificatore si attiva al superamento della soglia di tolleranza su CO₂ o PM2.5</span>
+                </div>
+                <table class="thr-table">
+                    <thead>
+                        <tr>
+                            <th>Variabile</th>
+                            <th>Unità</th>
+                            <th class="th-center">Tolleranza</th>
+                            <th class="th-center">Critica</th>
+                            <th class="th-center">Attuatore</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-air"></tbody>
+                </table>
+                <div class="legend">
+                    <div class="legend-item"><span class="badge badge-purificatore">purificatore</span> si accende al superamento della soglia di tolleranza</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="section-title">Temperatura, Umidità e Luminosità</div>
+        <div style="margin-top:8px">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Comfort Ambientale</span>
+                    <span class="card-subtitle">Il climatizzatore si attiva quando la temperatura supera la soglia di tolleranza</span>
+                </div>
+                <table class="thr-table">
+                    <thead>
+                        <tr>
+                            <th>Variabile</th>
+                            <th>Unità</th>
+                            <th class="th-center">Tolleranza</th>
+                            <th class="th-center">Critica</th>
+                            <th class="th-center">Attuatore</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-comfort"></tbody>
+                </table>
+                <div class="legend">
+                    <div class="legend-item"><span class="badge badge-climatizzatore">climatizzatore</span> si accende al superamento della soglia di tolleranza</div>
+                    <div class="legend-item" style="color:#9a8070; font-style:italic">Lux: soglia minima (valori sotto soglia = luce insufficiente)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="note">
+        ⚠ Dopo aver salvato, riavvia l'applicazione per applicare le modifiche agli attuatori.
+    </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const AIR_ROWS = [
+    { key: 'co2',  label: 'CO₂ – Anidride Carbonica', unit: 'ppm',    tol: 801,  crit: 1001, step: 1,     uses: ['purificatore'] },
+    { key: 'tvoc', label: 'TVOC – Qualità Aria',        unit: 'G',      tol: 2,    crit: 3,    step: 0.1,   uses: [] },
+    { key: 'ch2o', label: 'CH₂O – Formaldeide',         unit: 'mg/m³',  tol: 0.06, crit: 0.11, step: 0.01,  uses: [] },
+    { key: 'pm1',  label: 'PM1 – Particolato',          unit: 'µg/m³',  tol: 10,   crit: 20,   step: 1,     uses: [] },
+    { key: 'pm25', label: 'PM2.5 – Particolato',        unit: 'µg/m³',  tol: 15,   crit: 35,   step: 1,     uses: ['purificatore'] },
+    { key: 'pm10', label: 'PM10 – Particolato',         unit: 'µg/m³',  tol: 45,   crit: 90,   step: 1,     uses: [] },
+    { key: 'co',   label: 'CO – Monossido di Carbonio', unit: 'ppm',    tol: 7,    crit: 10,   step: 1,     uses: [] },
+    { key: 'o3',   label: 'O₃ – Ozono',                 unit: 'ppm',    tol: 0.07, crit: 0.12, step: 0.01,  uses: [] },
+    { key: 'no2',  label: 'NO₂ – Biossido di Azoto',    unit: 'ppm',    tol: 0.05, crit: 0.1,  step: 0.01,  uses: [] },
+];
+
+const COMFORT_ROWS = [
+    { key: 'temp', label: 'TEMP – Temperatura',       unit: '°C',  tol: 26,   crit: 28.1, step: 0.1, uses: ['climatizzatore'] },
+    { key: 'hum',  label: 'HUM – Umidità',            unit: '%',   tol: 60,   crit: 70.1, step: 0.1, uses: [] },
+    { key: 'lux',  label: 'Lux – Intensità Luminosa', unit: 'lux', tol: 200,  crit: 100,  step: 1,   uses: [] },
+];
+
+let thr = {};
+
+fetch('/thresholds/data')
+    .then(r => r.json())
+    .then(data => { thr = data; renderTables(); })
+    .catch(() => { renderTables(); showToast('Caricamento soglie fallito — uso valori di default', true); });
+
+function renderRows(rows) {
+    return rows.map(row => {
+        const saved   = thr[row.key] || {};
+        const tolVal  = saved.tolerance !== undefined ? saved.tolerance : row.tol;
+        const critVal = saved.critical  !== undefined ? saved.critical  : row.crit;
+        const badges  = row.uses.map(u => `<span class="badge badge-${u}">${u}</span>`).join(' ');
+        return `
+        <tr>
+            <td class="td-var">${row.label}</td>
+            <td class="td-unit">${row.unit}</td>
+            <td class="td-num"><input type="number" id="${row.key}_tol" value="${tolVal}" step="${row.step}" class="thr-input"></td>
+            <td class="td-num"><input type="number" id="${row.key}_crit" value="${critVal}" step="${row.step}" class="thr-input"></td>
+            <td class="td-uses">${badges || '<span class="badge-none">–</span>'}</td>
+        </tr>`;
+    }).join('');
+}
+
+function renderTables() {
+    document.getElementById('tbody-air').innerHTML     = renderRows(AIR_ROWS);
+    document.getElementById('tbody-comfort').innerHTML = renderRows(COMFORT_ROWS);
+}
+
+function collect() {
+    const all = [...AIR_ROWS, ...COMFORT_ROWS];
+    const result = {};
+    all.forEach(row => {
+        const tolEl  = document.getElementById(row.key + '_tol');
+        const critEl = document.getElementById(row.key + '_crit');
+        result[row.key] = {
+            tolerance: tolEl  ? parseFloat(tolEl.value)  : row.tol,
+            critical:  critEl ? parseFloat(critEl.value) : row.crit,
+        };
+    });
+    return result;
+}
+
+function saveThresholds() {
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.innerText = 'Salvataggio…';
+
+    fetch('/thresholds/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collect()),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            showToast('Soglie salvate');
+            thr = collect();
+        } else {
+            showToast('Errore: ' + (data.message || 'sconosciuto'), true);
+        }
+    })
+    .catch(() => showToast('Errore di connessione', true))
+    .finally(() => { btn.disabled = false; btn.innerText = 'Salva'; });
+}
+
+function restartApp() {
+    if (!confirm('Riavviare l\'applicazione per applicare le nuove soglie?')) return;
+    const btn = document.getElementById('btn-restart');
+    btn.disabled = true;
+    btn.innerText = 'Riavvio…';
+    fetch('/restart', { method: 'POST' })
+        .then(() => {
+            showToast('Riavvio in corso — attendi…');
+            const poll = setInterval(() => {
+                fetch('/').then(r => {
+                    if (r.ok) { clearInterval(poll); location.reload(); }
+                }).catch(() => {});
+            }, 1000);
+            setTimeout(() => clearInterval(poll), 20000);
+        })
+        .catch(() => { btn.disabled = false; btn.innerText = 'Riavvia'; showToast('Errore di connessione', true); });
+}
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3500);
+}
+</script>
+</body>
+</html>

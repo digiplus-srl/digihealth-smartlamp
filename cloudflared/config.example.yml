@@ -1,0 +1,21 @@
+# Configurazione Cloudflare Tunnel per DigiHealth Lamp
+#
+# Copia questo file in /home/digip/.cloudflared/config.yml e compila i valori.
+# IMPORTANTE: vengono esposti pubblicamente SOLO gli endpoint /api/* (ingestion).
+# La dashboard locale (/, /status, /toggle, ...) resta raggiungibile solo in LAN.
+
+tunnel: <TUNNEL_ID>
+credentials-file: /home/digip/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # 1) Espone solo gli endpoint API verso il Raspberry (Flask su :5000)
+  - hostname: lampada.tuodominio.it
+    path: ^/api/.*
+    service: http://localhost:5000
+
+  # 2) Qualsiasi altro path sullo stesso host -> 404 (dashboard NON esposta)
+  - hostname: lampada.tuodominio.it
+    service: http_status:404
+
+  # 3) Regola finale obbligatoria di catch-all
+  - service: http_status:404
